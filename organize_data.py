@@ -55,6 +55,7 @@ from docx import Document
 WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 TAG_MATCH = r'\s?\(\s?(V|Veg|GF|D|N|Vegetarian|Vegan|Contains Nuts)\s?\)'
 EMDASH = b'\xe2\x80\x93'
+EXCEPTIONS = ['No Meal', '---', 'No Diner', 'Winter Break', 'Breakfast Served', 'Lunch Served', 'Service', 'Kitchen Closed', 'Lawn Parties', '2017', 'Formal', '2019', '2018', '2016', '2015', '2014']
 
 ####################
 ### DATA LOADING ###
@@ -97,6 +98,36 @@ def count2type(idx):
         return 'side'
     return 'dessert'
 
+def is_valid_dish(line):
+    line = line.strip()
+    if len(line) == 0:  # empty lines GENERALLY separate days
+        return False
+    if any([word in line for word in EXCEPTIONS]):
+        return False
+    return True
+
+def extract_name(line):
+    line = line.replace('w.', 'with ')\
+               .replace('  ', ' ')\
+               .replace('&', 'and')\
+               .replace('*', '')
+    return re.sub(TAG_MATCH, '', line).strip()
+
+def clean_theme(encoding):
+    theme = encoding.split(EMDASH)[-1]\
+                    .strip()\
+                    .decode('utf-8')\
+                    .strip()
+    if 'patrick' in theme:
+        theme = 'irish'
+    elif any([event in theme for event in ['soph', 'lawn', 'formal', 'choice', 'fine']]):
+        theme = 'EVENT'
+    elif theme == 'vive la france':
+        theme = 'french'
+
+    return re.sub(r'night|nite|dinner|!|oktoberfest|day|style|family|', '', theme.lower()).strip()
+    
+
 def _builder(args):
     # `name` is currently not used (TODO: incorporate into data by parsing revision state)
 
@@ -121,9 +152,9 @@ def _builder(args):
                     'date': date + datetime.timedelta(days=day),
                     'dishes':[]})
                 if EMDASH in (encoding := line.encode('utf-8')):
-                    data[-1]['theme'] = encoding.split(EMDASH)[-1].strip().decode('utf-8')
+                    data[-1]['theme'] = clean_theme(encoding)
         else:
-            is_dish = len(line.strip()) > 0  # empty lines separate days
+            is_dish = is_valid_dish(line)
             if not is_dish:
                 in_day = False
                 continue
@@ -132,9 +163,9 @@ def _builder(args):
             data[-1]['dishes'].append({  # dish structure!
                 'type': dish_type,
                 'tags': simplify_tags(re.findall(TAG_MATCH, line)),
-                'name': re.sub(TAG_MATCH, '', line).strip()})
-
-    # 
+                'name': extract_name(line)})
+            if dish_idx == 9:
+                in_day = False
 
     return data
 
