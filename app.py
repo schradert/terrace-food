@@ -17,7 +17,7 @@ app = dash.Dash(__name__,
                 server=server,
                 meta_tags=[{"name": "viewport",
                             "content": "width=device-width, initial-scale=1"}])
-client = MongoClient('mongodb://localhost:27017')
+client = MongoClient(os.environ.get('CLIENT_URI'))
 coll = client.terrace_food.graphs
 
 def get_graph(tab1, tab2):
@@ -27,7 +27,6 @@ def get_graph(tab1, tab2):
         graph = coll.find_one({'layout.title.text':tab1})
     else:
         graph = coll.find_one({'layout.title.text':f'{tab1}_{tab2}'})
-        #graph = coll.find_one({'layout':{'title':{'text':f'{tab1}_{tab2}'}}})
     graph.pop('_id')
     return graph
 
