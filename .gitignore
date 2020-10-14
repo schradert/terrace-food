@@ -1,4 +1,15 @@
+# Drive access
 credentials.json
-menus/
 token.pickle
 .env
+
+# Data
+menus/
+
+# Testing notebooks
+test.ipynb
+
+# Heroku deployment
+*.pyc
+.DS_Store
+# .env
