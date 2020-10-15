@@ -3,6 +3,7 @@ import plotly.express as px
 import pandas as pd
 import nbformat 
 import json
+import os
 import datetime
 from pymongo import MongoClient
 
@@ -66,7 +67,7 @@ for group, freqs in graph_data.items():
         figs.append(common_graph_gen(freqs, group))
 
 
-client = MongoClient('mongodb://localhost:27017')
+client = MongoClient(os.environ.get('CLIENT_URI'))
 db = client.terrace_food
 graphs = db.graphs 
 graphs.delete_many({})
